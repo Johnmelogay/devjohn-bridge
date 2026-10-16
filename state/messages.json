@@ -3,7 +3,7 @@
     "id": "init_1",
     "sender": "devjohn",
     "type": "text",
-    "text": "[ONLINE] Welcome to DEVJOHN // BRIDGE, John.\n\n\u2022 \ud83c\udf99\ufe0f Tap the Mic to send voice notes from your phone.\n\u2022 \ud83d\udcce Tap the Paperclip to send files/photos straight to ~/Desktop/PhoneBridge on your MacBook Air.\n\u2022 \ud83d\udcbb Drop files into ~/Desktop/PhoneBridge/SendToPhone on your MacBook to push them to your phone.\n\u2022 \ud83d\udce1 Check the 'Dev Radar' tab to inspect all your local repositories, branches, and uncommitted files in real time.",
+    "text": "[ONLINE] Welcome to DEVJOHN // BRIDGE, John.\n\n• 🎙️ Tap the Mic to send voice notes from your phone.\n• 📎 Tap the Paperclip to send files/photos straight to ~/Desktop/PhoneBridge on your MacBook Air.\n• 💻 Drop files into ~/Desktop/PhoneBridge/SendToPhone on your MacBook to push them to your phone.\n• 📡 Check the 'Dev Radar' tab to inspect all your local repositories, branches, and uncommitted files in real time.",
     "timestamp": "2026-10-16T17:45:00Z"
   },
   {
@@ -37,5 +37,16 @@
     "type": "text",
     "text": "[ACK] Logged on MacBook Air (`~/Desktop/PhoneBridge/REMOTE_MESSAGES.md`): \"Teste\"",
     "timestamp": "2026-10-16T17:58:01.949006+00:00"
+  },
+  {
+    "id": "aud_1792173672835",
+    "sender": "john",
+    "type": "audio",
+    "text": "",
+    "mediaPath": "uploads/audio/voice_1792173670001.m4a",
+    "fileName": "voice_1792173670001.m4a",
+    "duration": "5s",
+    "fileSize": "123.0 KB",
+    "timestamp": "2026-10-16T18:01:12.835Z"
   }
 ]
