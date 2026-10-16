@@ -1,0 +1,106 @@
+{
+  "hostname": "John's MacBook Air",
+  "daemonStatus": "devjohn Online \u2022 Syncing",
+  "updatedAt": "2026-10-16T17:49:23.756094+00:00",
+  "uptime": "2 days",
+  "battery": "72%",
+  "projects": [
+    {
+      "name": "REPARAI\u0301",
+      "path": "~/REPARAI\u0301",
+      "branch": "codex/jev-multimodal-intake",
+      "lastCommit": "dfdd1fd \u2022 feat(routing): classify requests with dynamic domains (6 weeks ago)",
+      "dirtyCount": 30,
+      "changedFiles": [
+        "M .gitignore",
+        "M client-app/app.config.js",
+        "M client-app/package-lock.json",
+        "M client-app/package.json",
+        "M client-app/scripts/test-funnel-regression.ts",
+        "M client-app/src/app/(tabs)/home.tsx",
+        "M client-app/src/app/_layout.tsx",
+        "M client-app/src/app/provider/[id].tsx",
+        "M client-app/src/app/request/new/describe.tsx",
+        "M client-app/src/app/request/new/details.tsx",
+        "M client-app/src/app/request/new/match.tsx",
+        "M client-app/src/app/ticket/[id].tsx"
+      ]
+    },
+    {
+      "name": "TaskParser",
+      "path": "~/TaskParser",
+      "branch": "main",
+      "lastCommit": "b15c537 \u2022 feat: inject OpenAI key via GitHub Actions secret at deploy time (8 months ago)",
+      "dirtyCount": 0,
+      "changedFiles": []
+    },
+    {
+      "name": "Zenaide_Simoes",
+      "path": "~/Zenaide_Simoes",
+      "branch": "main",
+      "lastCommit": "4a3419f \u2022 fix: paginate product queries to fetch beyond Supabase 1000-row limit (6 months ago)",
+      "dirtyCount": 0,
+      "changedFiles": []
+    },
+    {
+      "name": "balneario-rio-preto-site",
+      "path": "~/balneario-rio-preto-site",
+      "branch": "main",
+      "lastCommit": "d3a2842 \u2022 Add initial HTML template for tAdd template.htmlhe webpage (11 months ago)",
+      "dirtyCount": 9,
+      "changedFiles": [
+        "M camping.html",
+        "M chales.html",
+        "M contato.html",
+        "M faq.html",
+        "M index.html",
+        "M sobre.html",
+        "M style.css",
+        "M template.html",
+        "M turismo.html"
+      ]
+    },
+    {
+      "name": "website_riopreto",
+      "path": "~/website_riopreto",
+      "branch": "main",
+      "lastCommit": "57fb5a4 \u2022 fix(faq): alinhar hor\u00e1rio com Google Maps (08h \u00e0s 17h30) e remover men\u00e7\u00f5es a crian\u00e7as no index (4 weeks ago)",
+      "dirtyCount": 2,
+      "changedFiles": [
+        "M .DS_Store",
+        "M node_modules/.DS_Store"
+      ]
+    },
+    {
+      "name": "Calculadora Locac\u0327a\u0303o Rio Preto",
+      "path": "~/Calculadora Locac\u0327a\u0303o Rio Preto",
+      "branch": "main",
+      "lastCommit": "9878de0 \u2022 ci: add GitHub Pages deployment workflow (7 months ago)",
+      "dirtyCount": 1,
+      "changedFiles": [
+        "?? public.html"
+      ]
+    },
+    {
+      "name": "graphic elements extractor",
+      "path": "~/graphic elements extractor",
+      "branch": "main",
+      "lastCommit": "150ef59 \u2022 feat: add crop_n_layers for advanced multilevel zoom search in segment map (5 months ago)",
+      "dirtyCount": 33,
+      "changedFiles": [
+        "?? .DS_Store",
+        "?? .agents/",
+        "?? .firebaserc",
+        "?? .gitignore",
+        "?? .venv/",
+        "?? 404.html",
+        "?? __pycache__/",
+        "?? ads.txt",
+        "?? app.html",
+        "?? assets/",
+        "?? auto-separator.js",
+        "?? blog.html"
+      ]
+    }
+  ]
+}
