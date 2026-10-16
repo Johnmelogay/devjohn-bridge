@@ -291,6 +291,7 @@
         } catch (e) {}
       }
       try {
+        // ALWAYS check for a fresh endpoint regardless of cache, every time
         const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/state/endpoint.json?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
@@ -298,6 +299,7 @@
             state.apiBase = data.url.replace(/\/$/, '');
             localStorage.setItem('dj_api_base', state.apiBase);
             document.getElementById('cfgApi').value = state.apiBase;
+            // Force reconnect if endpoint changes
             connectStream();
             return state.apiBase;
           }
