@@ -88,22 +88,32 @@ def main():
     )
     time.sleep(1.5)
 
-    tunnel_proc = subprocess.Popen(
-        [CLOUDFLARED, "tunnel", "--url", "http://127.0.0.1:8765", "--no-autoupdate"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
+    # Watchdog loop: if cloudflared ever drops or restarts, auto-relaunch and re-publish endpoint.json
+    while True:
+        if server_proc.poll() is not None:
+            server_proc = subprocess.Popen(
+                [HERMES_PY, os.path.join(BRIDGE_DIR, "realtime_server.py")],
+                cwd=BRIDGE_DIR,
+            )
+            time.sleep(1.5)
 
-    found_url = None
-    assert tunnel_proc.stdout is not None
-    for line in tunnel_proc.stdout:
-        m = re.search(r"(https://[a-zA-Z0-9-]+\.trycloudflare\.com)", line)
-        if m and not found_url:
-            found_url = m.group(1)
-            publish_endpoint(found_url)
+        tunnel_proc = subprocess.Popen(
+            [CLOUDFLARED, "tunnel", "--url", "http://127.0.0.1:8765", "--no-autoupdate"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
 
-    server_proc.wait()
+        found_url = None
+        assert tunnel_proc.stdout is not None
+        for line in tunnel_proc.stdout:
+            m = re.search(r"(https://[a-zA-Z0-9-]+\.trycloudflare\.com)", line)
+            if m and not found_url:
+                found_url = m.group(1)
+                publish_endpoint(found_url)
+
+        tunnel_proc.wait()
+        time.sleep(3)
 
 
 if __name__ == "__main__":

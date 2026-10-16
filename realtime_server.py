@@ -65,6 +65,7 @@ SSE_CLIENTS = []
 SSE_LOCK = threading.Lock()
 
 LIVE_STATE = {
+    "version": 1,
     "messages": [],
     "status": {
         "hostname": "John's MacBook Air",
@@ -80,13 +81,20 @@ LIVE_STATE = {
 }
 
 
+def bump_version():
+    LIVE_STATE["version"] = int(time.time() * 1000)
+
+
 def load_state():
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data.get("messages"), list):
-                    LIVE_STATE["messages"] = data["messages"]
+                    LIVE_STATE["messages"] = [
+                        m for m in data["messages"]
+                        if "timed out after 240 seconds" not in (m.get("text") or "")
+                    ]
         except Exception:
             pass
     if not LIVE_STATE["messages"]:
@@ -99,6 +107,8 @@ def load_state():
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             }
         ]
+    bump_version()
+    save_state()
 
 
 def save_state():
@@ -109,13 +119,15 @@ def save_state():
         print(f"[WARN] save_state error: {e}")
 
 
-def broadcast_event(event_type="update", payload=None):
+def broadcast_event(event_type="full", payload=None):
     data = json.dumps({
         "type": event_type,
         "payload": payload or LIVE_STATE,
+        "version": LIVE_STATE["version"],
         "ts": time.time(),
     })
-    msg = f"data: {data}\n\n".encode("utf-8")
+    pad = ":" + (" " * 2048) + "\n"
+    msg = (pad + f"data: {data}\n\n").encode("utf-8")
     with SSE_LOCK:
         dead = []
         for wfile in SSE_CLIENTS:
@@ -132,8 +144,9 @@ def add_message(msg):
     with STATE_LOCK:
         LIVE_STATE["messages"].append(msg)
         LIVE_STATE["messages"] = LIVE_STATE["messages"][-200:]
+        bump_version()
         save_state()
-    broadcast_event("message", msg)
+    broadcast_event("full", LIVE_STATE)
     return msg
 
 
@@ -143,6 +156,7 @@ def update_message(msg_id, **updates):
             if m.get("id") == msg_id:
                 m.update(updates)
                 break
+        bump_version()
         save_state()
     broadcast_event("full", LIVE_STATE)
 
@@ -153,7 +167,8 @@ def set_agent_status(busy: bool, activity: str):
         LIVE_STATE["status"]["agentActivity"] = activity
         LIVE_STATE["status"]["daemonStatus"] = f"⚡ {activity}" if busy else "Online • Ready"
         LIVE_STATE["status"]["updatedAt"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    broadcast_event("status", LIVE_STATE["status"])
+        bump_version()
+    broadcast_event("full", LIVE_STATE)
 
 
 def inspect_git_repo(path):
@@ -273,12 +288,33 @@ def capture_both_screens():
     return media_url, fname, size_kb
 
 
+def is_screenshot_intent(text: str) -> bool:
+    t = text.lower()
+    keywords = (
+        "screenshot",
+        "screen shot",
+        "snap screen",
+        "snap both screen",
+        "show me my screen",
+        "show me a screenshot",
+        "show my screen",
+        "capture screen",
+        "capture dual-screen",
+        "what is on my screen",
+        "what's on my screen",
+        "print da tela",
+        "mostra a tela",
+        "mostrar a tela",
+    )
+    return any(k in t for k in keywords)
+
+
 def run_devjohn_agent(user_command_text: str, source_type: str = "text", attached_file: Optional[str] = None):
     """Runs John's prompt directly through devjohn (Hermes Agent) and streams the reply to the app."""
     lower = user_command_text.lower().strip()
 
-    # Fast-path: if John explicitly asks for a dual-screen capture
-    if lower in ("📸 capture dual-screen screenshot now", "snap screens", "screenshot", "take a screenshot"):
+    # Fast-path: if John asks for a dual-screen capture in natural language (voice or text!)
+    if is_screenshot_intent(lower):
         set_agent_status(True, "Capturing both displays...")
         res = capture_both_screens()
         set_agent_status(False, "Online • Ready")
@@ -288,7 +324,7 @@ def run_devjohn_agent(user_command_text: str, source_type: str = "text", attache
                 "id": f"dj_{int(time.time()*1000)}",
                 "sender": "devjohn",
                 "type": "file",
-                "text": "Here is your live dual-screen capture (Samsung + MacBook Retina side-by-side).",
+                "text": "Here is your live dual-screen capture right now (Display 1 Samsung + Display 2 Liquid Retina side-by-side).",
                 "mediaUrl": media_url,
                 "fileName": fname,
                 "fileSize": size_kb,
@@ -501,8 +537,18 @@ class BridgeHTTPHandler(BaseHTTPRequestHandler):
                 return
 
         if path == "/api/state":
+            qs = parse_qs(parsed.query)
+            client_v = int(qs.get("v", ["0"])[0] or 0)
             with STATE_LOCK:
-                body = json.dumps(LIVE_STATE).encode("utf-8")
+                if client_v and client_v == LIVE_STATE.get("version"):
+                    body = json.dumps({
+                        "notModified": True,
+                        "version": LIVE_STATE.get("version"),
+                        "agentBusy": LIVE_STATE["status"]["agentBusy"],
+                        "agentActivity": LIVE_STATE["status"]["agentActivity"],
+                    }).encode("utf-8")
+                else:
+                    body = json.dumps(LIVE_STATE).encode("utf-8")
             self.send_response(200)
             self._send_cors()
             self.send_header("Content-Type", "application/json")
@@ -514,18 +560,19 @@ class BridgeHTTPHandler(BaseHTTPRequestHandler):
         if path == "/api/stream":
             self.send_response(200)
             self._send_cors()
-            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Connection", "keep-alive")
+            self.send_header("X-Accel-Buffering", "no")
             self.end_headers()
             with SSE_LOCK:
                 SSE_CLIENTS.append(self.wfile)
             try:
-                # Send initial snapshot immediately
-                init_payload = json.dumps({"type": "full", "payload": LIVE_STATE, "ts": time.time()})
-                self.wfile.write(f"data: {init_payload}\n\n".encode("utf-8"))
+                pad = ":" + (" " * 2048) + "\n"
+                init_payload = json.dumps({"type": "full", "payload": LIVE_STATE, "version": LIVE_STATE.get("version"), "ts": time.time()})
+                self.wfile.write((pad + f"data: {init_payload}\n\n").encode("utf-8"))
                 self.wfile.flush()
                 while True:
-                    time.sleep(15)
+                    time.sleep(10)
                     self.wfile.write(b": keepalive\n\n")
                     self.wfile.flush()
             except Exception:

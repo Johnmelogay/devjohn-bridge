@@ -257,6 +257,7 @@
     const REPO = 'Johnmelogay/devjohn-bridge';
     let state = {
       apiBase: localStorage.getItem('dj_api_base') || '',
+      version: 0,
       messages: [],
       status: null,
       sse: null,
@@ -355,14 +356,27 @@
     async function fetchState() {
       if (!state.apiBase) return;
       try {
-        const res = await fetch(`${state.apiBase}/api/state?t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`${state.apiBase}/api/state?v=${state.version || 0}&t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Bad status');
         const data = await res.json();
         setConnUI(true);
-        const prevLen = state.messages.length;
+        if (data.notModified) {
+          if (state.status) {
+            state.status.agentBusy = data.agentBusy;
+            state.status.agentActivity = data.agentActivity;
+            renderRadar();
+          }
+          return;
+        }
+        const prevSig = JSON.stringify(state.messages);
+        state.version = data.version || Date.now();
         state.messages = data.messages || [];
         state.status = data.status || null;
-        renderAll(state.messages.length !== prevLen);
+        if (JSON.stringify(state.messages) !== prevSig) {
+          renderAll(true);
+        } else {
+          renderRadar();
+        }
       } catch (e) {
         setConnUI(false);
         discoverEndpoint(true);
@@ -568,6 +582,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: 'john', text })
       });
+      fetchState();
     }
 
     async function sendQuickCommand(text) {
@@ -576,6 +591,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: 'john', text })
       });
+      fetchState();
     }
 
     // --- VOICE COMMAND RECORDING (WHISPER STT) ---
@@ -652,6 +668,7 @@
         },
         body: blob
       });
+      fetchState();
     }
 
     // --- FAST BINARY FILE TRANSFER ---
@@ -673,6 +690,7 @@
         });
       }
       event.target.value = '';
+      fetchState();
     }
 
     function switchTab(tab) {
@@ -708,11 +726,10 @@
     // Boot
     discoverEndpoint(false).then(() => {
       connectStream();
+      // Poll lightweight delta every 900ms so UI updates in real time even when Cloudflare/iOS buffers SSE
       setInterval(() => {
-        if (!state.sse || state.sse.readyState === EventSource.CLOSED) {
-          fetchState();
-        }
-      }, 4000);
+        fetchState();
+      }, 900);
     });
   </script>
 </body>
