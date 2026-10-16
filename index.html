@@ -455,7 +455,7 @@
           const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(m.fileName || m.mediaUrl);
           extraHtml = `
             <div class="mt-2.5 bg-bg/70 p-2.5 rounded-xl border border-border space-y-2">
-              ${isImg ? `<a href="${url}" target="_blank"><img src="${url}" class="rounded-lg max-h-72 w-auto object-contain border border-border" /></a>` : ''}
+              ${isImg ? `<a href="${url}" target="_blank"><img src="${url}" class="rounded-lg max-h-[520px] w-full object-contain border border-border" /></a>` : ''}
               <div class="flex items-center justify-between gap-3">
                 <div class="truncate">
                   <p class="text-xs font-mono text-white truncate">📎 ${escapeHtml(m.fileName || 'File')}</p>

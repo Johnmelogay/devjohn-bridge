@@ -249,25 +249,34 @@ def capture_both_screens():
     os.makedirs(scratch, exist_ok=True)
     s1 = os.path.join(scratch, "screen1.png")
     s2 = os.path.join(scratch, "screen2.png")
+    for p in (s1, s2):
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except Exception:
+            pass
+
     fname = f"screens_{int(time.time())}.jpg"
     dest_path = os.path.join(UPLOADS_DIR, fname)
 
-    subprocess.run(["screencapture", "-x", "-D", "1", s1], check=False)
-    subprocess.run(["screencapture", "-x", "-D", "2", s2], check=False)
+    subprocess.run(["/usr/sbin/screencapture", "-x", "-D", "1", s1], check=False, timeout=10)
+    subprocess.run(["/usr/sbin/screencapture", "-x", "-D", "2", s2], check=False, timeout=10)
 
     try:
-        from PIL import Image
-        imgs = [Image.open(p) for p in (s1, s2) if os.path.exists(p)]
+        from PIL import Image, ImageOps
+        imgs = [Image.open(p).convert("RGB") for p in (s1, s2) if os.path.exists(p)]
         if len(imgs) == 2:
-            w = imgs[0].width + imgs[1].width
-            h = max(imgs[0].height, imgs[1].height)
-            canvas = Image.new("RGB", (w, h), (9, 9, 11))
-            canvas.paste(imgs[0], (0, 0))
-            canvas.paste(imgs[1], (imgs[0].width, 0))
-            canvas.thumbnail((2400, 1300))
-            canvas.save(dest_path, format="JPEG", quality=82)
+            # Equal size tiles (1920x1080 each) stacked vertically (one on top of the other)
+            tile_w, tile_h = 1920, 1080
+            gap = 8
+            top_img = ImageOps.pad(imgs[0], (tile_w, tile_h), method=Image.Resampling.LANCZOS, color=(9, 9, 11))
+            bot_img = ImageOps.pad(imgs[1], (tile_w, tile_h), method=Image.Resampling.LANCZOS, color=(9, 9, 11))
+            canvas = Image.new("RGB", (tile_w, tile_h * 2 + gap), (24, 24, 28))
+            canvas.paste(top_img, (0, 0))
+            canvas.paste(bot_img, (0, tile_h + gap))
+            canvas.save(dest_path, format="JPEG", quality=85)
         elif len(imgs) == 1:
-            imgs[0].convert("RGB").save(dest_path, format="JPEG", quality=82)
+            imgs[0].save(dest_path, format="JPEG", quality=85)
     except Exception:
         if os.path.exists(s1):
             shutil.copy2(s1, dest_path)
@@ -285,6 +294,7 @@ def capture_both_screens():
             "url": media_url,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
+        bump_version()
     return media_url, fname, size_kb
 
 
@@ -324,7 +334,7 @@ def run_devjohn_agent(user_command_text: str, source_type: str = "text", attache
                 "id": f"dj_{int(time.time()*1000)}",
                 "sender": "devjohn",
                 "type": "file",
-                "text": "Here is your live dual-screen capture right now (Display 1 Samsung + Display 2 Liquid Retina side-by-side).",
+                "text": "Here is your live dual-screen capture right now (Display 1 Samsung on top + Display 2 Liquid Retina on bottom, equal size).",
                 "mediaUrl": media_url,
                 "fileName": fname,
                 "fileSize": size_kb,
