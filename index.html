@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DEVJOHN // COMMAND BRIDGE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bg: '#09090b',
+            surface: '#121215',
+            panel: '#18181c',
+            border: '#27272a',
+            accent: '#10b981',
+            accentDim: 'rgba(16, 185, 129, 0.15)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      overscroll-behavior-y: none;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+    .pulse-ring {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="h-[100dvh] flex flex-col font-sans select-none overflow-hidden">
+
+  <!-- TOP HEADER -->
+  <header class="bg-surface/90 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between shrink-0 z-20">
+    <div class="flex items-center gap-3">
+      <div class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm">
+        DJ
+        <span id="daemonDot" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-surface"></span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-mono font-bold text-sm tracking-tight text-white">DEVJOHN // BRIDGE</h1>
+          <span id="statusBadge" class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Synced</span>
+        </div>
+        <p id="subStatus" class="text-[11px] text-zinc-400 font-mono truncate max-w-[210px] sm:max-w-xs">MacBook Air • Listening</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Role Toggle -->
+      <button id="roleBtn" onclick="toggleRole()" class="text-xs font-mono px-2.5 py-1.5 rounded-lg bg-panel border border-border text-zinc-300 hover:text-white flex items-center gap-1.5 transition">
+        <span id="roleIcon">📱</span>
+        <span id="roleLabel">John</span>
+      </button>
+
+      <!-- Settings Modal Trigger -->
+      <button onclick="openSettings()" class="p-2 rounded-lg bg-panel border border-border text-zinc-400 hover:text-white transition" title="Connection Settings">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-surface border-b border-border px-4 flex gap-1 shrink-0">
+    <button onclick="switchTab('chat')" id="tab-chat" class="flex-1 sm:flex-none sm:px-5 py-2.5 text-xs font-mono font-medium border-b-2 border-emerald-500 text-emerald-400 flex items-center justify-center gap-2 transition">
+      <span>💬</span> Comms & Audio
+    </button>
+    <button onclick="switchTab('radar')" id="tab-radar" class="flex-1 sm:flex-none sm:px-5 py-2.5 text-xs font-mono font-medium border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-2 transition">
+      <span>📡</span> Dev Radar <span id="projectCount" class="px-1.5 py-0.2 bg-zinc-800 text-zinc-300 rounded text-[10px]">0</span>
+    </button>
+    <button onclick="switchTab('files')" id="tab-files" class="flex-1 sm:flex-none sm:px-5 py-2.5 text-xs font-mono font-medium border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-2 transition">
+      <span>📁</span> Vault <span id="fileCount" class="px-1.5 py-0.2 bg-zinc-800 text-zinc-300 rounded text-[10px]">0</span>
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 overflow-hidden relative flex flex-col">
+
+    <!-- TAB 1: CHAT & AUDIO STREAM -->
+    <section id="view-chat" class="flex-1 flex flex-col overflow-hidden">
+      <!-- Quick Actions Bar -->
+      <div class="bg-bg/80 border-b border-border/60 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+        <span class="text-[10px] font-mono uppercase text-zinc-500 shrink-0">Quick Cmd:</span>
+        <button onclick="sendQuickCommand('📸 Capture dual-screen screenshot now')" class="text-[11px] font-mono px-2.5 py-1 rounded-full bg-panel border border-border text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-300 shrink-0 transition">
+          📸 Snap Screens
+        </button>
+        <button onclick="sendQuickCommand('📡 Refresh all project git statuses')" class="text-[11px] font-mono px-2.5 py-1 rounded-full bg-panel border border-border text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-300 shrink-0 transition">
+          🔄 Sync Dev Radar
+        </button>
+        <button onclick="sendQuickCommand('🚀 What are you currently working on?')" class="text-[11px] font-mono px-2.5 py-1 rounded-full bg-panel border border-border text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-300 shrink-0 transition">
+          🤖 Status Check
+        </button>
+      </div>
+
+      <!-- Messages List -->
+      <div id="messagesList" class="flex-1 overflow-y-auto p-4 space-y-3 select-text">
+        <div class="text-center py-10 text-zinc-500 font-mono text-xs">
+          Connecting to Johnmelogay/devjohn-bridge...
+        </div>
+      </div>
+
+      <!-- Recording Banner (Hidden by default) -->
+      <div id="recordingBar" class="hidden bg-red-950/80 border-t border-red-500/40 px-4 py-3 items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-red-500 pulse-ring"></span>
+          <span class="font-mono text-xs text-red-200 font-medium">Recording Voice Note...</span>
+          <span id="recordTimer" class="font-mono text-xs text-red-400">00:00</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="cancelRecording()" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-zinc-900/90 text-zinc-300 border border-zinc-700">
+            Cancel
+          </button>
+          <button onclick="stopAndSendRecording()" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-red-500 text-white font-semibold shadow-lg">
+            Send Audio ⬆
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Progress Banner -->
+      <div id="uploadBar" class="hidden bg-emerald-950/70 border-t border-emerald-500/30 px-4 py-2 items-center justify-between text-xs font-mono text-emerald-300 shrink-0">
+        <span id="uploadText">Uploading payload to GitHub Bridge...</span>
+        <div class="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Composer Bar -->
+      <div class="bg-surface border-t border-border p-3 shrink-0">
+        <div class="flex items-end gap-2 max-w-4xl mx-auto">
+          <!-- File Upload Button -->
+          <label class="p-3 rounded-xl bg-panel border border-border text-zinc-300 hover:text-white hover:border-zinc-600 cursor-pointer shrink-0 transition" title="Share File / Photo / Audio">
+            <input type="file" id="fileInput" class="hidden" multiple onchange="handleFileUpload(event)" />
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+            </svg>
+          </label>
+
+          <!-- Voice Recorder Button -->
+          <button id="micBtn" onclick="toggleRecording()" class="p-3 rounded-xl bg-panel border border-border text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/40 shrink-0 transition" title="Record Voice Note">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+          </button>
+
+          <!-- Text Input -->
+          <div class="flex-1 relative">
+            <textarea id="msgInput" rows="1" placeholder="Send message, task, or command to MacBook..." 
+              class="w-full bg-panel border border-border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/60 resize-none max-h-32 select-text"
+              onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendTextMessage();}"></textarea>
+          </div>
+
+          <!-- Send Button -->
+          <button onclick="sendTextMessage()" class="p-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold shrink-0 transition shadow-lg shadow-emerald-500/10">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DEV RADAR (PROJECTS & MACBOOK STATUS) -->
+    <section id="view-radar" class="hidden flex-1 overflow-y-auto p-4 space-y-4 select-text">
+      <div class="max-w-4xl mx-auto space-y-4">
+        <!-- Machine Card -->
+        <div class="bg-surface border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">MacBook Air Host</span>
+              <span id="radarUpdated" class="text-xs font-mono text-zinc-500">Last synced: --</span>
+            </div>
+            <h2 id="machineName" class="text-base font-semibold text-white">John's MacBook Air (devjohn daemon)</h2>
+            <p id="machineStats" class="text-xs font-mono text-zinc-400">Waiting for telemetry...</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="sendQuickCommand('📸 Capture dual-screen screenshot now'); switchTab('chat');" class="text-xs font-mono px-3 py-2 rounded-xl bg-panel border border-border hover:border-emerald-500/40 text-zinc-200 transition">
+              📸 Request Live Screen
+            </button>
+            <button onclick="pollBridge(true)" class="text-xs font-mono px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition">
+              ↻ Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Latest Screen Preview (if available) -->
+        <div id="latestScreenCard" class="hidden bg-surface border border-border rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-mono uppercase tracking-wider text-zinc-400">Latest MacBook Screen Capture</h3>
+            <span id="screenTime" class="text-[11px] font-mono text-zinc-500"></span>
+          </div>
+          <a id="screenLink" href="#" target="_blank" class="block overflow-hidden rounded-xl border border-border">
+            <img id="screenImg" src="" alt="MacBook Screen" class="w-full h-auto object-cover max-h-72" />
+          </a>
+        </div>
+
+        <!-- Repositories Grid -->
+        <div>
+          <h3 class="text-xs font-mono uppercase tracking-wider text-zinc-400 mb-3 px-1">Active Local Repositories & Git Status</h3>
+          <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: FILE VAULT -->
+    <section id="view-files" class="hidden flex-1 overflow-y-auto p-4 select-text">
+      <div class="max-w-4xl mx-auto space-y-4">
+        <div class="flex items-center justify-between bg-surface border border-border rounded-2xl p-4">
+          <div>
+            <h2 class="text-sm font-semibold text-white">Shared File & Audio Vault</h2>
+            <p class="text-xs text-zinc-400">All files, voice notes, and screenshots exchanged between your Phone and MacBook Air (`~/Desktop/PhoneBridge`).</p>
+          </div>
+          <label class="text-xs font-mono px-3.5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-semibold cursor-pointer hover:bg-emerald-400 transition shrink-0">
+            + Upload File
+            <input type="file" class="hidden" multiple onchange="handleFileUpload(event)" />
+          </label>
+        </div>
+
+        <div id="filesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SETTINGS / PAIRING MODAL -->
+  <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-surface border border-border rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <h3 class="font-mono font-bold text-sm text-white">⚙️ GITHUB BRIDGE CONNECTION</h3>
+        <button onclick="closeSettings()" class="text-zinc-400 hover:text-white text-lg leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-mono text-zinc-400 mb-1">Repository (`owner/repo`)</label>
+          <input id="cfgRepo" type="text" value="Johnmelogay/devjohn-bridge" class="w-full bg-panel border border-border rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+        </div>
+
+        <div>
+          <label class="block font-mono text-zinc-400 mb-1">GitHub Personal Access Token (for sending Audio/Files)</label>
+          <input id="cfgToken" type="password" placeholder="ghp_... or gho_..." class="w-full bg-panel border border-border rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" />
+          <p class="text-[11px] text-zinc-500 mt-1">Stored locally in your browser's `localStorage` only. Never committed to Git.</p>
+        </div>
+
+        <div>
+          <label class="block font-mono text-zinc-400 mb-1">Sender Identity</label>
+          <select id="cfgRole" class="w-full bg-panel border border-border rounded-xl px-3 py-2 text-white font-mono">
+            <option value="john">📱 John (Phone / Remote)</option>
+            <option value="devjohn">💻 MacBook Air (devjohn)</option>
+          </select>
+        </div>
+
+        <div class="pt-2 border-t border-border">
+          <label class="block font-mono text-zinc-400 mb-1">Instant Phone Pairing Link (Includes Token in `#hash`)</label>
+          <div class="flex gap-2">
+            <input id="magicLinkInput" type="text" readonly class="flex-1 bg-bg border border-border rounded-xl px-3 py-2 text-zinc-400 font-mono text-[11px]" />
+            <button onclick="copyMagicLink()" class="px-3 py-2 rounded-xl bg-panel border border-border text-emerald-400 font-mono hover:bg-emerald-500/10">Copy</button>
+          </div>
+          <p class="text-[10px] text-zinc-500 mt-1">Note: URL `#hash` fragments are never sent to servers—they stay strictly inside your phone's browser.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSettings()" class="px-4 py-2 rounded-xl bg-panel border border-border text-xs font-mono text-zinc-300">Cancel</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-mono font-semibold text-xs">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- STATE & CONFIG ---
+    const DEFAULT_REPO = 'Johnmelogay/devjohn-bridge';
+    let state = {
+      repo: localStorage.getItem('dj_repo') || DEFAULT_REPO,
+      token: localStorage.getItem('dj_token') || '',
+      role: localStorage.getItem('dj_role') || 'john',
+      messages: [],
+      status: null,
+      lastSha: null,
+      isRecording: false,
+      mediaRecorder: null,
+      audioChunks: [],
+      recordStart: 0,
+      recordInterval: null
+    };
+
+    // Parse URL hash for one-tap phone pairing (#token=gho_xxx&role=john)
+    function checkHashPairing() {
+      if (window.location.hash && window.location.hash.length > 1) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const tk = params.get('token');
+        const rl = params.get('role');
+        const rp = params.get('repo');
+        if (tk) {
+          state.token = tk;
+          localStorage.setItem('dj_token', tk);
+        }
+        if (rl) {
+          state.role = rl;
+          localStorage.setItem('dj_role', rl);
+        }
+        if (rp) {
+          state.repo = rp;
+          localStorage.setItem('dj_repo', rp);
+        }
+        // Clean hash from address bar while keeping state
+        history.replaceState(null, document.title, window.location.pathname + window.location.search);
+      }
+    }
+
+    function updateRoleUI() {
+      const icon = document.getElementById('roleIcon');
+      const label = document.getElementById('roleLabel');
+      if (state.role === 'john') {
+        icon.textContent = '📱';
+        label.textContent = 'John (Phone)';
+      } else {
+        icon.textContent = '💻';
+        label.textContent = 'MacBook';
+      }
+    }
+
+    function toggleRole() {
+      state.role = state.role === 'john' ? 'devjohn' : 'john';
+      localStorage.setItem('dj_role', state.role);
+      updateRoleUI();
+      renderMessages();
+    }
+
+    function switchTab(tab) {
+      ['chat', 'radar', 'files'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.classList.add('border-emerald-500', 'text-emerald-400');
+          btn.classList.remove('border-transparent', 'text-zinc-400');
+        } else {
+          btn.classList.remove('border-emerald-500', 'text-emerald-400');
+          btn.classList.add('border-transparent', 'text-zinc-400');
+        }
+      });
+    }
+
+    // --- GITHUB API HELPERS ---
+    function getHeaders() {
+      const h = { 'Accept': 'application/vnd.github.v3+json' };
+      if (state.token) h['Authorization'] = `token ${state.token}`;
+      return h;
+    }
+
+    function utf8ToBase64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function base64ToUtf8(b64) {
+      return decodeURIComponent(escape(atob(b64.replace(/\s/g, ''))));
+    }
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      const chunkSize = 0x8000;
+      for (let i = 0; i < len; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    async function fetchJsonFile(path) {
+      // Use GitHub API if token is set (avoids raw CDN cache completely)
+      if (state.token) {
+        const res = await fetch(`https://api.github.com/repos/${state.repo}/contents/${path}?t=${Date.now()}`, {
+          headers: getHeaders(),
+          cache: 'no-store'
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return {
+          sha: data.sha,
+          content: JSON.parse(base64ToUtf8(data.content))
+        };
+      } else {
+        const res = await fetch(`https://raw.githubusercontent.com/${state.repo}/main/${path}?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return {
+          sha: null,
+          content: await res.json()
+        };
+      }
+    }
+
+    async function putGitHubFile(path, base64Content, commitMsg, existingSha = null) {
+      if (!state.token) {
+        openSettings();
+        throw new Error('GitHub token required to send messages or files.');
+      }
+      // If sha not provided, check if file exists
+      if (!existingSha) {
+        try {
+          const check = await fetch(`https://api.github.com/repos/${state.repo}/contents/${path}`, {
+            headers: getHeaders()
+          });
+          if (check.ok) {
+            const d = await check.json();
+            existingSha = d.sha;
+          }
+        } catch (e) {}
+      }
+
+      const body = {
+        message: commitMsg,
+        content: base64Content
+      };
+      if (existingSha) body.sha = existingSha;
+
+      const res = await fetch(`https://api.github.com/repos/${state.repo}/contents/${path}`, {
+        method: 'PUT',
+        headers: {
+          ...getHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`GitHub Write Error: ${res.status} ${err}`);
+      }
+      return await res.json();
+    }
+
+    // --- POLLING & SYNC ---
+    async function pollBridge(force = false) {
+      try {
+        const [msgData, statusData] = await Promise.all([
+          fetchJsonFile('state/messages.json').catch(() => ({ sha: null, content: [] })),
+          fetchJsonFile('state/status.json').catch(() => ({ sha: null, content: null }))
+        ]);
+
+        const prevCount = state.messages.length;
+        state.messages = Array.isArray(msgData.content) ? msgData.content : [];
+        state.lastSha = msgData.sha;
+
+        if (force || state.messages.length !== prevCount || JSON.stringify(state.status) !== JSON.stringify(statusData.content)) {
+          state.status = statusData.content;
+          renderMessages(state.messages.length > prevCount);
+          renderRadar();
+          renderVault();
+        }
+
+        const badge = document.getElementById('statusBadge');
+        badge.textContent = state.token ? 'LIVE • AUTH' : 'READ-ONLY';
+        badge.className = state.token
+          ? 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+          : 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
+
+      } catch (err) {
+        console.warn('Poll error:', err);
+      }
+    }
+
+    // --- RENDERING ---
+    function formatTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function resolveMediaUrl(path) {
+      if (!path) return '';
+      if (path.startsWith('http')) return path;
+      return `https://raw.githubusercontent.com/${state.repo}/main/${path}`;
+    }
+
+    function renderMessages(scrollToBottom = false) {
+      const container = document.getElementById('messagesList');
+      if (!state.messages || state.messages.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 space-y-2">
+            <div class="text-2xl">📡</div>
+            <p class="text-xs font-mono text-zinc-400">Bridge ready. Send a voice note, file, or dev command below.</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = state.messages.map(m => {
+        const isMe = m.sender === state.role;
+        const senderLabel = m.sender === 'john' ? '📱 John' : '🤖 devjohn (MacBook Air)';
+        const bubbleClass = isMe
+          ? 'bg-emerald-500/15 border-emerald-500/30 text-zinc-100 ml-auto'
+          : 'bg-panel border-border text-zinc-100 mr-auto';
+
+        let attachmentHtml = '';
+        if (m.type === 'audio' && m.mediaPath) {
+          const url = resolveMediaUrl(m.mediaPath);
+          attachmentHtml = `
+            <div class="mt-2 bg-bg/60 p-2.5 rounded-xl border border-border/80">
+              <div class="flex items-center justify-between text-[10px] font-mono text-emerald-400 mb-1.5">
+                <span>🎙️ VOICE NOTE (${m.duration || 'Audio'})</span>
+                <a href="${url}" download="${m.fileName || 'voice.webm'}" class="underline hover:text-white">Download</a>
+              </div>
+              <audio controls preload="metadata" src="${url}" class="w-full h-9"></audio>
+              ${m.transcript ? `<p class="mt-2 text-xs text-zinc-300 italic border-l-2 border-emerald-500/50 pl-2">"${escapeHtml(m.transcript)}"</p>` : ''}
+            </div>`;
+        } else if (m.type === 'file' && m.mediaPath) {
+          const url = resolveMediaUrl(m.mediaPath);
+          const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(m.fileName || m.mediaPath);
+          attachmentHtml = `
+            <div class="mt-2 bg-bg/60 p-2.5 rounded-xl border border-border/80 space-y-2">
+              ${isImg ? `<a href="${url}" target="_blank"><img src="${url}" class="rounded-lg max-h-60 w-auto object-contain border border-border" /></a>` : ''}
+              <div class="flex items-center justify-between gap-3">
+                <div class="truncate">
+                  <p class="text-xs font-mono text-white truncate">📎 ${escapeHtml(m.fileName || m.mediaPath)}</p>
+                  <p class="text-[10px] font-mono text-zinc-400">${m.fileSize || ''}</p>
+                </div>
+                <a href="${url}" target="_blank" download="${m.fileName || ''}" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono shrink-0 hover:bg-emerald-500/30">
+                  ⬇ Save
+                </a>
+              </div>
+            </div>`;
+        }
+
+        return `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <div class="flex items-center gap-2 mb-1 px-1">
+              <span class="text-[10px] font-mono font-semibold ${m.sender === 'john' ? 'text-emerald-400' : 'text-sky-400'}">${senderLabel}</span>
+              <span class="text-[10px] font-mono text-zinc-500">${formatTime(m.timestamp)}</span>
+            </div>
+            <div class="max-w-[88%] sm:max-w-[75%] rounded-2xl border px-3.5 py-2.5 ${bubbleClass}">
+              ${m.text ? `<div class="text-sm whitespace-pre-wrap leading-relaxed break-words">${escapeHtml(m.text)}</div>` : ''}
+              ${attachmentHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (scrollToBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function renderRadar() {
+      const s = state.status;
+      if (!s) return;
+
+      document.getElementById('subStatus').textContent = `${s.hostname || 'MacBook Air'} • ${s.daemonStatus || 'Active'}`;
+      document.getElementById('radarUpdated').textContent = `Synced: ${formatTime(s.updatedAt)}`;
+      document.getElementById('machineStats').textContent = `Uptime: ${s.uptime || '--'} | Battery: ${s.battery || '--'} | Bridge Inbox: ~/Desktop/PhoneBridge`;
+
+      const projects = s.projects || [];
+      document.getElementById('projectCount').textContent = projects.length;
+
+      if (s.latestScreen) {
+        const card = document.getElementById('latestScreenCard');
+        card.classList.remove('hidden');
+        const url = resolveMediaUrl(s.latestScreen.path);
+        document.getElementById('screenImg').src = url + '?t=' + Date.now();
+        document.getElementById('screenLink').href = url;
+        document.getElementById('screenTime').textContent = formatTime(s.latestScreen.timestamp);
+      }
+
+      const grid = document.getElementById('projectsGrid');
+      grid.innerHTML = projects.map(p => {
+        const dirtyBadge = p.dirtyCount > 0
+          ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">${p.dirtyCount} modified</span>`
+          : `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">clean</span>`;
+
+        return `
+          <div class="bg-surface border border-border rounded-2xl p-4 flex flex-col justify-between space-y-3 hover:border-zinc-700 transition">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="font-mono font-bold text-sm text-white truncate">${escapeHtml(p.name)}</h4>
+                ${dirtyBadge}
+              </div>
+              <div class="flex items-center gap-2 text-xs font-mono text-zinc-400">
+                <span class="text-sky-400">⎇ ${escapeHtml(p.branch || 'main')}</span>
+                <span>•</span>
+                <span class="truncate text-zinc-500">${escapeHtml(p.path)}</span>
+              </div>
+              <p class="text-xs text-zinc-300 font-mono bg-panel/80 border border-border/60 rounded-lg px-2.5 py-1.5 truncate">
+                ${escapeHtml(p.lastCommit || 'No commits yet')}
+              </p>
+              ${p.changedFiles && p.changedFiles.length > 0 ? `
+                <div class="text-[11px] font-mono text-amber-300/90 bg-amber-950/20 border border-amber-500/20 rounded-lg p-2 max-h-20 overflow-y-auto">
+                  ${p.changedFiles.map(f => `<div>${escapeHtml(f)}</div>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="sendQuickCommand('Inspect repo ${p.name} and summarize current state'); switchTab('chat');" class="flex-1 text-[11px] font-mono py-1.5 px-2.5 rounded-lg bg-panel border border-border text-zinc-300 hover:text-white hover:border-emerald-500/40 transition">
+                🔍 Inspect
+              </button>
+              <button onclick="sendQuickCommand('Run build/checks on ${p.name} and report'); switchTab('chat');" class="flex-1 text-[11px] font-mono py-1.5 px-2.5 rounded-lg bg-panel border border-border text-zinc-300 hover:text-white hover:border-emerald-500/40 transition">
+                ⚡ Test/Build
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderVault() {
+      const mediaMsgs = (state.messages || []).filter(m => m.mediaPath).slice().reverse();
+      document.getElementById('fileCount').textContent = mediaMsgs.length;
+      const grid = document.getElementById('filesGrid');
+
+      if (mediaMsgs.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 font-mono text-xs">No files or audio notes uploaded yet.</div>`;
+        return;
+      }
+
+      grid.innerHTML = mediaMsgs.map(m => {
+        const url = resolveMediaUrl(m.mediaPath);
+        const icon = m.type === 'audio' ? '🎙️' : '📎';
+        return `
+          <div class="bg-surface border border-border rounded-xl p-3.5 flex items-center justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-1.5">
+                <span>${icon}</span>
+                <p class="text-xs font-mono font-semibold text-white truncate">${escapeHtml(m.fileName || m.mediaPath)}</p>
+              </div>
+              <p class="text-[11px] font-mono text-zinc-400">From ${m.sender} • ${formatTime(m.timestamp)} ${m.fileSize ? '• ' + m.fileSize : ''}</p>
+              ${m.type === 'audio' ? `<audio controls preload="none" src="${url}" class="h-8 w-56 mt-1"></audio>` : ''}
+            </div>
+            <a href="${url}" target="_blank" download="${m.fileName || ''}" class="px-3 py-2 rounded-xl bg-panel border border-border text-emerald-400 font-mono text-xs shrink-0 hover:border-emerald-500/40">
+              ⬇ Open
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // --- SENDING MESSAGES, AUDIO & FILES ---
+    async function appendMessage(newMsg) {
+      const latest = await fetchJsonFile('state/messages.json').catch(() => ({ sha: null, content: [] }));
+      const list = Array.isArray(latest.content) ? latest.content : [];
+      list.push(newMsg);
+      // Keep last 150 messages so JSON stays snappy
+      const trimmed = list.slice(-150);
+      const b64 = utf8ToBase64(JSON.stringify(trimmed, null, 2));
+      await putGitHubFile('state/messages.json', b64, `msg(${newMsg.sender}): ${newMsg.type}`, latest.sha);
+      state.messages = trimmed;
+      renderMessages(true);
+      renderVault();
+    }
+
+    async function sendTextMessage() {
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      await sendPayload({
+        id: 'msg_' + Date.now(),
+        sender: state.role,
+        type: 'text',
+        text: text,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    async function sendQuickCommand(cmdText) {
+      await sendPayload({
+        id: 'cmd_' + Date.now(),
+        sender: state.role,
+        type: 'text',
+        text: cmdText,
+        isCommand: true,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    async function sendPayload(msgObj) {
+      const bar = document.getElementById('uploadBar');
+      const barText = document.getElementById('uploadText');
+      try {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        barText.textContent = 'Syncing message to MacBook Bridge...';
+        await appendMessage(msgObj);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+      }
+    }
+
+    // --- VOICE RECORDING ---
+    async function toggleRecording() {
+      if (state.isRecording) {
+        stopAndSendRecording();
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        state.audioChunks = [];
+        // Prefer mp4/aac for iOS Safari compatibility, fallback to webm
+        const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '');
+        state.mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+        state.mediaRecorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) state.audioChunks.push(e.data);
+        };
+
+        state.mediaRecorder.start(250);
+        state.isRecording = true;
+        state.recordStart = Date.now();
+
+        document.getElementById('recordingBar').classList.remove('hidden');
+        document.getElementById('recordingBar').classList.add('flex');
+        document.getElementById('recordTimer').textContent = '00:00';
+
+        state.recordInterval = setInterval(() => {
+          const secs = Math.floor((Date.now() - state.recordStart) / 1000);
+          const m = String(Math.floor(secs / 60)).padStart(2, '0');
+          const s = String(secs % 60).padStart(2, '0');
+          document.getElementById('recordTimer').textContent = `${m}:${s}`;
+        }, 500);
+
+      } catch (err) {
+        alert('Microphone access denied or unavailable: ' + err.message);
+      }
+    }
+
+    function cancelRecording() {
+      if (state.mediaRecorder && state.isRecording) {
+        state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        state.mediaRecorder.stop();
+      }
+      clearInterval(state.recordInterval);
+      state.isRecording = false;
+      document.getElementById('recordingBar').classList.add('hidden');
+      document.getElementById('recordingBar').classList.remove('flex');
+    }
+
+    async function stopAndSendRecording() {
+      if (!state.mediaRecorder || !state.isRecording) return;
+      const durationSec = Math.max(1, Math.round((Date.now() - state.recordStart) / 1000));
+      clearInterval(state.recordInterval);
+      state.isRecording = false;
+      document.getElementById('recordingBar').classList.add('hidden');
+      document.getElementById('recordingBar').classList.remove('flex');
+
+      const recorder = state.mediaRecorder;
+      await new Promise(resolve => {
+        recorder.onstop = resolve;
+        recorder.stop();
+        recorder.stream.getTracks().forEach(t => t.stop());
+      });
+
+      const mime = recorder.mimeType || 'audio/webm';
+      const ext = mime.includes('mp4') || mime.includes('aac') ? 'm4a' : 'webm';
+      const blob = new Blob(state.audioChunks, { type: mime });
+      const buffer = await blob.arrayBuffer();
+      const b64 = arrayBufferToBase64(buffer);
+
+      const fileName = `voice_${Date.now()}.${ext}`;
+      const repoPath = `uploads/audio/${fileName}`;
+
+      const bar = document.getElementById('uploadBar');
+      const barText = document.getElementById('uploadText');
+      try {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        barText.textContent = `Uploading Voice Note (${durationSec}s)...`;
+
+        await putGitHubFile(repoPath, b64, `audio(${state.role}): ${fileName}`);
+        const caption = document.getElementById('msgInput').value.trim();
+        document.getElementById('msgInput').value = '';
+
+        await appendMessage({
+          id: 'aud_' + Date.now(),
+          sender: state.role,
+          type: 'audio',
+          text: caption || '',
+          mediaPath: repoPath,
+          fileName: fileName,
+          duration: `${durationSec}s`,
+          fileSize: `${(blob.size / 1024).toFixed(1)} KB`,
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        alert('Voice upload failed: ' + err.message);
+      } finally {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+      }
+    }
+
+    // --- FILE SHARING ---
+    async function handleFileUpload(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      const bar = document.getElementById('uploadBar');
+      const barText = document.getElementById('uploadText');
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+
+      try {
+        for (const file of files) {
+          barText.textContent = `Uploading ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`;
+          const buffer = await file.arrayBuffer();
+          const b64 = arrayBufferToBase64(buffer);
+          const safeName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          const isAudio = file.type.startsWith('audio/');
+          const folder = isAudio ? 'uploads/audio' : 'uploads/files';
+          const repoPath = `${folder}/${safeName}`;
+
+          await putGitHubFile(repoPath, b64, `file(${state.role}): ${safeName}`);
+
+          await appendMessage({
+            id: 'file_' + Date.now(),
+            sender: state.role,
+            type: isAudio ? 'audio' : 'file',
+            text: document.getElementById('msgInput').value.trim(),
+            mediaPath: repoPath,
+            fileName: file.name,
+            fileSize: file.size > 1048576
+              ? `${(file.size / 1048576).toFixed(2)} MB`
+              : `${(file.size / 1024).toFixed(1)} KB`,
+            timestamp: new Date().toISOString()
+          });
+          document.getElementById('msgInput').value = '';
+        }
+      } catch (err) {
+        alert('File upload failed: ' + err.message);
+      } finally {
+        event.target.value = '';
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+      }
+    }
+
+    // --- SETTINGS MODAL ---
+    function openSettings() {
+      document.getElementById('cfgRepo').value = state.repo;
+      document.getElementById('cfgToken').value = state.token;
+      document.getElementById('cfgRole').value = state.role;
+      updateMagicLinkPreview();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function updateMagicLinkPreview() {
+      const repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_REPO;
+      const token = document.getElementById('cfgToken').value.trim();
+      const baseUrl = window.location.origin + window.location.pathname;
+      const hash = token ? `#token=${encodeURIComponent(token)}&role=john&repo=${encodeURIComponent(repo)}` : '';
+      document.getElementById('magicLinkInput').value = baseUrl + hash;
+    }
+
+    function copyMagicLink() {
+      updateMagicLinkPreview();
+      const input = document.getElementById('magicLinkInput');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('Phone pairing link copied!');
+    }
+
+    function saveSettings() {
+      state.repo = document.getElementById('cfgRepo').value.trim() || DEFAULT_REPO;
+      state.token = document.getElementById('cfgToken').value.trim();
+      state.role = document.getElementById('cfgRole').value;
+      localStorage.setItem('dj_repo', state.repo);
+      localStorage.setItem('dj_token', state.token);
+      localStorage.setItem('dj_role', state.role);
+      updateRoleUI();
+      closeSettings();
+      pollBridge(true);
+    }
+
+    // --- INIT ---
+    checkHashPairing();
+    updateRoleUI();
+    pollBridge(true);
+    setInterval(() => pollBridge(false), 6000);
+  </script>
+</body>
+</html>
