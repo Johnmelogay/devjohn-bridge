@@ -401,7 +401,7 @@ def run_devjohn_agent(user_command_text: str, source_type: str = "text", attache
                 "--provider",
                 "gemini",
                 "-m",
-                "gemini-4-argon",
+                "gemini-2.0-flash-exp",
                 "--query-file",
                 qfile,
             ],
