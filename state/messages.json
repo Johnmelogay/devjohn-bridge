@@ -5,5 +5,16 @@
     "type": "text",
     "text": "[ONLINE] Welcome to DEVJOHN // BRIDGE, John.\n\n• 🎙️ Tap the Mic to send voice notes from your phone.\n• 📎 Tap the Paperclip to send files/photos straight to ~/Desktop/PhoneBridge on your MacBook Air.\n• 💻 Drop files into ~/Desktop/PhoneBridge/SendToPhone on your MacBook to push them to your phone.\n• 📡 Check the 'Dev Radar' tab to inspect all your local repositories, branches, and uncommitted files in real time.",
     "timestamp": "2026-10-16T17:45:00Z"
+  },
+  {
+    "id": "aud_1792173373886",
+    "sender": "john",
+    "type": "audio",
+    "text": "",
+    "mediaPath": "uploads/audio/voice_1792173371407.m4a",
+    "fileName": "voice_1792173371407.m4a",
+    "duration": "1s",
+    "fileSize": "36.1 KB",
+    "timestamp": "2026-10-16T17:56:13.887Z"
   }
 ]
